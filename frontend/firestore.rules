@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - users can read/write their own documents, admins can read/write all
+    match /users/{userId} {
+      allow read, write: if request.auth != null && (request.auth.uid == userId || request.auth.token.email.matches('.*admin.*'));
+      allow create: if request.auth != null;
+    }
+
+    // Events collection - authenticated users can read, admins can write
+    match /events/{eventId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email.matches('.*admin.*');
+    }
+
+    // Announcements collection - authenticated users can read, admins can write
+    match /announcements/{announcementId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email.matches('.*admin.*');
+    }
+
+    // Deadlines collection - authenticated users can read, admins can write
+    match /deadlines/{deadlineId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email.matches('.*admin.*');
+    }
+
+    // Subjects collection - authenticated users can read, admins can write
+    match /subjects/{subjectId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email.matches('.*admin.*');
+    }
+
+    // Grades collection - authenticated users can read their own grades, admins can read/write all
+    match /grades/{gradeId} {
+      allow read: if request.auth != null && (resource.data.studentId == request.auth.uid || request.auth.token.email.matches('.*admin.*'));
+      allow write: if request.auth != null && request.auth.token.email.matches('.*admin.*');
+    }
+
+    // Attendance collection - authenticated users can read their own attendance, admins can read/write all
+    match /attendance/{attendanceId} {
+      allow read: if request.auth != null && (resource.data.studentId == request.auth.uid || request.auth.token.email.matches('.*admin.*'));
+      allow write: if request.auth != null && request.auth.token.email.matches('.*admin.*');
+    }
+
+    // Admin users collection - only admins can access
+    match /adminUsers/{adminId} {
+      allow read, write: if request.auth != null && request.auth.token.email.matches('.*admin.*');
+    }
+
+    // Analytics collection - only admins can access
+    match /analytics/{analyticId} {
+      allow read, write: if request.auth != null && request.auth.token.email.matches('.*admin.*');
+    }
+
+    // Premium users collection - allow registration without auth, authenticated users can read their own data
+    match /premium_users/{userId} {
+      allow create: if true; // Allow registration without authentication
+      allow read: if request.auth != null && (request.auth.uid == userId || request.auth.token.email.matches('.*admin.*'));
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.token.email.matches('.*admin.*');
+    }
+
+    // Allow authenticated users to query premium_users collection for login
+    match /premium_users {
+      allow read: if request.auth != null;
+      allow create: if true; // Allow registration
+      allow update: if request.auth != null && (request.auth.uid == resource.data.uid || request.auth.token.email.matches('.*admin.*'));
+    }
+  }
+}

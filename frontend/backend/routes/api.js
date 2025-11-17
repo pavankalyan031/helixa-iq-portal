@@ -1,0 +1,850 @@
+// Main API Routes
+// Defines all API endpoints for the admin backend
+
+import express from 'express'
+import AuthMiddleware from '../middleware/auth.js'
+import adminService from '../services/adminService.js'
+
+const router = express.Router()
+
+// Health check endpoint
+router.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'API is healthy',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  })
+})
+
+// System status endpoint
+router.get('/status', AuthMiddleware.isAuthenticated, async (req, res) => {
+  try {
+    const healthCheck = await adminService.performHealthCheck()
+    res.json(healthCheck)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get system status'
+    })
+  }
+})
+
+// Dashboard data endpoint
+router.get('/dashboard', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const dashboardData = await adminService.getDashboardData()
+    res.json(dashboardData)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get dashboard data'
+    })
+  }
+})
+
+// Real-time metrics endpoint
+router.get('/metrics', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const metrics = await adminService.getRealTimeMetrics()
+    res.json(metrics)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get metrics'
+    })
+  }
+})
+
+// ==================== USER MANAGEMENT ROUTES ====================
+
+// Get all users
+router.get('/users', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const options = {
+      page: parseInt(req.query.page) || 1,
+      limit: parseInt(req.query.limit) || 50,
+      search: req.query.search || '',
+      year: req.query.year || '',
+      specialization: req.query.specialization || '',
+      status: req.query.status || '',
+      sortBy: req.query.sortBy || 'createdAt',
+      sortOrder: req.query.sortOrder || 'desc'
+    }
+
+    const result = await adminService.getAllUsers(options)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch users'
+    })
+  }
+})
+
+// Get user by ID
+router.get('/users/:id', AuthMiddleware.isAuthenticated, async (req, res) => {
+  try {
+    const result = await adminService.getUserById(req.params.id)
+
+    // Check if user can access this data
+    if (!req.isAdmin && req.user.uid !== req.params.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      })
+    }
+
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch user'
+    })
+  }
+})
+
+// Update user
+router.put('/users/:id', AuthMiddleware.hasPermission('user.write'), async (req, res) => {
+  try {
+    // Check permissions
+    if (!req.isAdmin && req.user.uid !== req.params.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      })
+    }
+
+    const result = await adminService.updateUser(req.params.id, req.body)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update user'
+    })
+  }
+})
+
+// Delete user
+router.delete('/users/:id', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const result = await adminService.deleteUser(req.params.id)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete user'
+    })
+  }
+})
+
+// Search users
+router.get('/users/search/:term', AuthMiddleware.isAuthenticated, async (req, res) => {
+  try {
+    const filters = req.query
+    const result = await adminService.searchUsers(req.params.term, filters)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to search users'
+    })
+  }
+})
+
+// Export users
+router.get('/users/export/:format', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const format = req.params.format
+    const filters = req.query
+
+    const result = await adminService.exportUsers(format, filters)
+
+    if (result.success) {
+      if (format === 'csv') {
+        res.setHeader('Content-Type', 'text/csv')
+        res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`)
+        res.send(result.data)
+      } else {
+        res.setHeader('Content-Type', 'application/json')
+        res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`)
+        res.send(JSON.stringify(result.data, null, 2))
+      }
+    } else {
+      res.status(500).json(result)
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to export users'
+    })
+  }
+})
+
+// Bulk update users
+router.post('/users/bulk-update', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const { userIds, updateData } = req.body
+
+    if (!userIds || !Array.isArray(userIds) || !updateData) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request data'
+      })
+    }
+
+    const result = await adminService.bulkUpdateUsers(userIds, updateData)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to bulk update users'
+    })
+  }
+})
+
+// ==================== CONTENT MANAGEMENT ROUTES ====================
+
+// Generic content CRUD
+router.post('/content/:type', AuthMiddleware.hasPermission('content.write'), async (req, res) => {
+  try {
+    const result = await adminService.createContent(req.params.type, req.body)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: `Failed to create ${req.params.type}`
+    })
+  }
+})
+
+router.get('/content/:type', AuthMiddleware.isAuthenticated, async (req, res) => {
+  try {
+    const options = req.query
+    const result = await adminService.getAllContent(req.params.type, options)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: `Failed to fetch ${req.params.type}`
+    })
+  }
+})
+
+router.put('/content/:type/:id', AuthMiddleware.hasPermission('content.write'), async (req, res) => {
+  try {
+    const result = await adminService.updateContent(req.params.type, req.params.id, req.body)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: `Failed to update ${req.params.type}`
+    })
+  }
+})
+
+router.delete('/content/:type/:id', AuthMiddleware.hasPermission('content.delete'), async (req, res) => {
+  try {
+    const result = await adminService.deleteContent(req.params.type, req.params.id)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: `Failed to delete ${req.params.type}`
+    })
+  }
+})
+
+// Specific content endpoints
+router.get('/events/upcoming', AuthMiddleware.isAuthenticated, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10
+    const result = await adminService.getUpcomingEvents(limit)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch upcoming events'
+    })
+  }
+})
+
+router.get('/announcements/active', AuthMiddleware.isAuthenticated, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 20
+    const result = await adminService.getActiveAnnouncements(limit)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch active announcements'
+    })
+  }
+})
+
+router.get('/deadlines/upcoming', AuthMiddleware.isAuthenticated, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10
+    const result = await adminService.getUpcomingDeadlines(limit)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch upcoming deadlines'
+    })
+  }
+})
+
+router.get('/syllabus/:specialization/:year/:semester', AuthMiddleware.isAuthenticated, async (req, res) => {
+  try {
+    const { specialization, year, semester } = req.params
+    const result = await adminService.getSyllabusBySpecialization(specialization, year, semester)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch syllabus'
+    })
+  }
+})
+
+// ==================== ACADEMIC MANAGEMENT ROUTES ====================
+
+// Grades management
+router.post('/grades', AuthMiddleware.hasPermission('academic.write'), async (req, res) => {
+  try {
+    const result = await adminService.createGrade(req.body)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create grade'
+    })
+  }
+})
+
+router.get('/grades/:studentId', AuthMiddleware.isAuthenticated, async (req, res) => {
+  try {
+    // Check permissions
+    if (!req.isAdmin && req.user.uid !== req.params.studentId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      })
+    }
+
+    const options = req.query
+    const result = await adminService.getStudentGrades(req.params.studentId, options)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch grades'
+    })
+  }
+})
+
+router.put('/grades/:id', AuthMiddleware.hasPermission('academic.write'), async (req, res) => {
+  try {
+    const result = await adminService.updateGrade(req.params.id, req.body)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update grade'
+    })
+  }
+})
+
+router.get('/grades/:studentId/gpa', AuthMiddleware.isAuthenticated, async (req, res) => {
+  try {
+    // Check permissions
+    if (!req.isAdmin && req.user.uid !== req.params.studentId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      })
+    }
+
+    const year = req.query.year
+    const semester = req.query.semester
+    const result = await adminService.calculateGPA(req.params.studentId, year, semester)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to calculate GPA'
+    })
+  }
+})
+
+// Attendance management
+router.post('/attendance', AuthMiddleware.hasPermission('academic.write'), async (req, res) => {
+  try {
+    const result = await adminService.createAttendance(req.body)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create attendance'
+    })
+  }
+})
+
+router.get('/attendance/:studentId', AuthMiddleware.isAuthenticated, async (req, res) => {
+  try {
+    // Check permissions
+    if (!req.isAdmin && req.user.uid !== req.params.studentId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      })
+    }
+
+    const options = req.query
+    const result = await adminService.getStudentAttendance(req.params.studentId, options)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch attendance'
+    })
+  }
+})
+
+router.put('/attendance/:id', AuthMiddleware.hasPermission('academic.write'), async (req, res) => {
+  try {
+    const result = await adminService.updateAttendance(req.params.id, req.body)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update attendance'
+    })
+  }
+})
+
+router.get('/attendance/:studentId/percentage', AuthMiddleware.isAuthenticated, async (req, res) => {
+  try {
+    // Check permissions
+    if (!req.isAdmin && req.user.uid !== req.params.studentId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      })
+    }
+
+    const subject = req.query.subject
+    const month = req.query.month
+    const year = req.query.year
+    const result = await adminService.calculateAttendancePercentage(req.params.studentId, subject, month, year)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to calculate attendance percentage'
+    })
+  }
+})
+
+router.post('/attendance/bulk', AuthMiddleware.hasPermission('academic.write'), async (req, res) => {
+  try {
+    const attendanceRecords = req.body.records
+    if (!attendanceRecords || !Array.isArray(attendanceRecords)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid attendance records'
+      })
+    }
+
+    const result = await adminService.bulkCreateAttendance(attendanceRecords)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to bulk create attendance'
+    })
+  }
+})
+
+// Academic statistics
+router.get('/academic/stats', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const options = req.query
+    const result = await adminService.getAcademicStatistics(options)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get academic statistics'
+    })
+  }
+})
+
+// ==================== ANALYTICS ROUTES ====================
+
+// System overview
+router.get('/analytics/overview', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const result = await adminService.getSystemOverview()
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get system overview'
+    })
+  }
+})
+
+// User analytics
+router.get('/analytics/users', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const result = await adminService.getUserAnalytics()
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get user analytics'
+    })
+  }
+})
+
+// Content analytics
+router.get('/analytics/content', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const result = await adminService.getContentAnalytics()
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get content analytics'
+    })
+  }
+})
+
+// Academic analytics
+router.get('/analytics/academic', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const result = await adminService.getAcademicAnalytics()
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get academic analytics'
+    })
+  }
+})
+
+// Generate reports
+router.get('/reports/:type', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const { type } = req.params
+    const options = req.query
+
+    const result = await adminService.generateReport(type, options)
+
+    if (result.success) {
+      if (options.format === 'csv') {
+        res.setHeader('Content-Type', 'text/csv')
+        res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`)
+        res.send(result.data)
+      } else {
+        res.setHeader('Content-Type', 'application/json')
+        res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`)
+        res.send(JSON.stringify(result.data, null, 2))
+      }
+    } else {
+      res.status(500).json(result)
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate report'
+    })
+  }
+})
+
+// Custom queries
+router.post('/analytics/query', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const { collection, filters, aggregations } = req.body
+
+    if (!collection) {
+      return res.status(400).json({
+        success: false,
+        error: 'Collection name is required'
+      })
+    }
+
+    const result = await adminService.runCustomQuery(collection, filters, aggregations)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to run custom query'
+    })
+  }
+})
+
+// ==================== SYSTEM MANAGEMENT ROUTES ====================
+
+// Backup operations
+router.post('/backup', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const options = req.body
+    const result = await adminService.createBackup(options)
+
+    if (result.success) {
+      res.setHeader('Content-Type', 'application/json')
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`)
+      res.send(JSON.stringify(result.data, null, 2))
+    } else {
+      res.status(500).json(result)
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create backup'
+    })
+  }
+})
+
+// Restore operations
+router.post('/restore', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    const backupData = req.body
+
+    if (!backupData) {
+      return res.status(400).json({
+        success: false,
+        error: 'Backup data is required'
+      })
+    }
+
+    const result = await adminService.restoreBackup(backupData)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to restore backup'
+    })
+  }
+})
+
+// System configuration (placeholder)
+router.get('/config', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    // In a real system, this would fetch from a config collection
+    const config = {
+      systemName: 'LTSU Student Portal',
+      version: '1.0.0',
+      maintenance: false,
+      features: {
+        userRegistration: true,
+        adminDashboard: true,
+        analytics: true,
+        backup: true
+      }
+    }
+
+    res.json({
+      success: true,
+      data: config
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get system configuration'
+    })
+  }
+})
+
+// ==================== OTP EMAIL ROUTES ====================
+
+// Send OTP to email
+router.post('/auth/send-otp', async (req, res) => {
+  try {
+    const { email } = req.body
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required'
+      })
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+
+    // Store OTP temporarily (in production, use Redis or database)
+    // For demo, we'll use a simple in-memory store
+    global.otpStore = global.otpStore || {}
+    global.otpStore[email] = {
+      otp: otp,
+      expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutes
+    }
+
+    // Send email with OTP using SendGrid (free tier)
+    const sgMail = (await import('@sendgrid/mail')).default
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY || 'YOUR_SENDGRID_API_KEY_HERE')
+
+    const msg = {
+      to: email,
+      from: {
+        email: 'noreply@ltsustudentportal.com',
+        name: 'LTSU Student Portal'
+      },
+      subject: 'LTSU Student Portal - Email Verification OTP',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0;">LTSU Student Portal</h1>
+            <p style="color: #6b7280; margin: 5px 0;">Learn • Share • Grow</p>
+          </div>
+
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; border-radius: 15px; text-align: center; margin: 20px 0;">
+            <h2 style="color: white; margin: 0 0 20px 0; font-size: 24px;">Email Verification</h2>
+            <p style="color: #e0e7ff; margin: 0 0 30px 0; font-size: 16px;">Your verification code is:</p>
+
+            <div style="background-color: rgba(255,255,255,0.2); padding: 25px; border-radius: 10px; display: inline-block; margin: 20px 0;">
+              <h1 style="color: white; font-size: 36px; margin: 0; letter-spacing: 8px; font-weight: bold;">${otp}</h1>
+            </div>
+
+            <p style="color: #fbbf24; margin: 20px 0 0 0; font-size: 14px; font-weight: bold;">
+              ⚠️ This code will expire in 5 minutes
+            </p>
+          </div>
+
+          <div style="background-color: #f8fafc; padding: 25px; border-radius: 10px; margin: 20px 0;">
+            <h3 style="color: #374151; margin: 0 0 15px 0;">Security Notice</h3>
+            <p style="color: #6b7280; margin: 0; line-height: 1.6;">
+              If you didn't request this verification code, please ignore this email.
+              Your account security is important to us.
+            </p>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; margin: 0; font-size: 14px;">
+              Best regards,<br>
+              <strong style="color: #374151;">LTSU Team</strong>
+            </p>
+          </div>
+        </div>
+      `
+    }
+
+    await sgMail.send(msg)
+
+    console.log(`✅ Real OTP email sent to ${email}`)
+
+    res.json({
+      success: true,
+      message: 'OTP sent successfully to your email'
+    })
+
+  } catch (error) {
+    console.error('OTP send error:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send OTP. Please try again.'
+    })
+  }
+})
+
+// Verify OTP
+router.post('/auth/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email and OTP are required'
+      })
+    }
+
+    const storedOtp = global.otpStore?.[email]
+
+    if (!storedOtp) {
+      return res.status(400).json({
+        success: false,
+        error: 'OTP not found or expired. Please request a new one.'
+      })
+    }
+
+    if (Date.now() > storedOtp.expiresAt) {
+      delete global.otpStore[email]
+      return res.status(400).json({
+        success: false,
+        error: 'OTP has expired. Please request a new one.'
+      })
+    }
+
+    if (storedOtp.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid OTP. Please check and try again.'
+      })
+    }
+
+    // OTP verified successfully
+    delete global.otpStore[email]
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully!'
+    })
+
+  } catch (error) {
+    console.error('OTP verification error:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to verify OTP. Please try again.'
+    })
+  }
+})
+
+// ==================== UTILITY ROUTES ====================
+
+// Clear cache (placeholder)
+router.post('/cache/clear', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    // In a real system, this would clear various caches
+    res.json({
+      success: true,
+      message: 'Cache cleared successfully'
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to clear cache'
+    })
+  }
+})
+
+// System logs (placeholder)
+router.get('/logs', AuthMiddleware.isAdmin, async (req, res) => {
+  try {
+    // In a real system, this would fetch from a logs collection
+    const logs = [
+      {
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        message: 'System started successfully',
+        source: 'system'
+      }
+    ]
+
+    res.json({
+      success: true,
+      data: logs
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch logs'
+    })
+  }
+})
+
+export default router
