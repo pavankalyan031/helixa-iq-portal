@@ -183,7 +183,7 @@ export default function PremiumBenefits({ user }) {
             <div className="text-center mb-8 p-8 bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20">
               <div className="text-6xl mb-4">⭐</div>
               <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">
-                LTSU Premium Benefits
+                Helixa IQ Portal Premium Benefits
               </h1>
               <p className="text-xl text-white/90 font-medium">
                 Unlock your full potential with exclusive premium features
@@ -320,7 +320,7 @@ export default function PremiumBenefits({ user }) {
                 Ready to Transform Your Future?
               </h2>
               <p className="text-white/90 text-lg mb-6">
-                Join thousands of successful students who chose LTSU Premium
+                Join thousands of successful students who chose Helixa IQ Portal Premium
               </p>
               <div className="flex justify-center">
                 <button

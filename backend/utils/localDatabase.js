@@ -10,14 +10,16 @@ const __dirname = path.dirname(__filename)
 
 class LocalDatabase {
   constructor() {
-    this.dataDir = path.join(__dirname, '../data')
+    // Use import.meta.url for more reliable path resolution in ES modules
+    const currentDir = path.dirname(fileURLToPath(import.meta.url))
+    this.dataDir = path.join(currentDir, '../data')
     this.usersFile = path.join(this.dataDir, 'premium_users.json')
-    
+
     // Ensure data directory exists
     if (!fs.existsSync(this.dataDir)) {
       fs.mkdirSync(this.dataDir, { recursive: true })
     }
-    
+
     // Initialize users file if it doesn't exist
     if (!fs.existsSync(this.usersFile)) {
       fs.writeFileSync(this.usersFile, JSON.stringify([], null, 2))

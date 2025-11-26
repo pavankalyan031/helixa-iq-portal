@@ -44,7 +44,7 @@ export default function Header({user}){
   return (
     <header className="bg-white/10 backdrop-blur-2xl shadow-2xl p-4 flex items-center border-b border-white/20 relative z-20">
       <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-        <img src="/assets/images/logo.png" alt="LTSU" className="w-12 h-12 rounded-full hover:scale-110 transition-transform duration-200"/>
+        <img src="/assets/images/logo.png" alt="Helixa IQ" className="w-12 h-12 rounded-full hover:scale-110 transition-transform duration-200"/>
         <div>
           <div className="font-bold text-white hover:text-blue-400 transition-colors duration-200">LTSU Student Portal</div>
           <div className="text-xs text-white/70">Learn • Share • Grow</div>

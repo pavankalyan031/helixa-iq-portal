@@ -56,6 +56,24 @@ export default function PremiumUpgrade({ user, onClose }) {
   }
 
   const handleUpgrade = async () => {
+    console.log('Starting premium upgrade process...')
+    console.log('User object:', user)
+
+    // Check if user is authenticated
+    if (!user) {
+      alert('❌ You must be logged in to upgrade to premium.')
+      console.error('User is not authenticated')
+      return
+    }
+
+    if (!user.uid) {
+      alert('❌ User authentication error. Please log out and log back in.')
+      console.error('User object missing uid:', user)
+      return
+    }
+
+    console.log('User authenticated with UID:', user.uid)
+
     // Validate payment details
     if (paymentMethod === 'card') {
       if (!cardDetails.number || !cardDetails.expiry || !cardDetails.cvv || !cardDetails.name) {
@@ -71,6 +89,8 @@ export default function PremiumUpgrade({ user, onClose }) {
 
     setIsProcessing(true)
     try {
+      console.log('Processing payment...')
+
       // Simulate payment processing with more realistic timing
       await new Promise(resolve => setTimeout(resolve, 3000))
 
@@ -81,9 +101,11 @@ export default function PremiumUpgrade({ user, onClose }) {
         throw new Error('Payment failed')
       }
 
+      console.log('Payment successful, updating Firestore...')
+
       // Update user premium status in Firebase
       const userRef = doc(db, 'users', user.uid)
-      await updateDoc(userRef, {
+      const updateData = {
         isPremium: true,
         premiumPlan: selectedPlan,
         premiumStartDate: new Date(),
@@ -91,8 +113,16 @@ export default function PremiumUpgrade({ user, onClose }) {
           ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
           : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
         paymentMethod: paymentMethod,
-        paymentDate: new Date()
-      })
+        paymentDate: new Date(),
+        updatedAt: new Date().toISOString()
+      }
+
+      console.log('Update data:', updateData)
+      console.log('User reference:', userRef)
+
+      await updateDoc(userRef, updateData)
+
+      console.log('Firestore update successful!')
 
       // Show success message with details
       const planName = selectedPlan === 'monthly' ? 'Monthly Plan' : 'Annual Plan'
@@ -104,7 +134,23 @@ export default function PremiumUpgrade({ user, onClose }) {
       window.location.reload() // Refresh to show premium features
     } catch (error) {
       console.error('Error upgrading to premium:', error)
-      alert('❌ Payment failed. Please check your payment details and try again, or contact support at info.studentportalofficial@gmail.com')
+      console.error('Error code:', error.code)
+      console.error('Error message:', error.message)
+
+      // Provide more specific error messages
+      if (error.code === 'permission-denied') {
+        alert('❌ Permission denied. Please make sure you are logged in and try again.')
+      } else if (error.code === 'unavailable') {
+        alert('❌ Network error. Please check your internet connection and try again.')
+      } else if (error.code === 'not-found') {
+        alert('❌ User profile not found. Please contact support.')
+      } else if (error.code === 'auth/network-request-failed') {
+        alert('❌ Network connection failed. Please check your internet connection and try again.')
+      } else if (error.code === 'auth/user-not-found') {
+        alert('❌ User account not found. Please log out and log back in.')
+      } else {
+        alert(`❌ Payment failed: ${error.message}\n\nPlease check your payment details and try again, or contact support at info.studentportalofficial@gmail.com`)
+      }
     } finally {
       setIsProcessing(false)
     }
@@ -116,7 +162,7 @@ export default function PremiumUpgrade({ user, onClose }) {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">⭐</div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">Upgrade to LTSU Premium</h2>
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">Upgrade to Helixa IQ Portal</h2>
           <p className="text-gray-600 text-lg">Unlock your full potential with advanced learning tools</p>
         </div>
 

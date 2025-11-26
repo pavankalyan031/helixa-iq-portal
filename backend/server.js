@@ -1,5 +1,8 @@
-// LTSU Student Portal - Backend Server
+// Helixa IQ Portal - Backend Server
 // Main server file for the admin backend system
+
+import dotenv from 'dotenv'
+dotenv.config()
 
 import express from 'express'
 import cors from 'cors'
@@ -16,7 +19,7 @@ const PORT = process.env.PORT || 3002
 // Security middleware
 app.use(helmet())
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL || ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 }))
 
@@ -70,13 +73,27 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1)
 })
 
-// Start server
-const server = app.listen(PORT, () => {
-  console.log(`🚀 LTSU Backend Server running on port ${PORT}`)
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`)
-  console.log(`🔗 API Base URL: http://localhost:${PORT}/api`)
-  console.log(`❤️  Health Check: http://localhost:${PORT}/api/health`)
-})
+// Start server with port fallback
+const startServer = (port) => {
+  const server = app.listen(port, () => {
+    console.log(` LTSU STudent Portal Backend Server running on port ${port}`)
+    console.log(` Environment: ${process.env.NODE_ENV || 'development'}`)
+    console.log(` API Base URL: http://localhost:${port}/api`)
+    console.log(` Health Check: http://localhost:${port}/api/health`)
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${port} is busy, trying port ${port + 1}...`)
+      startServer(port + 1)
+    } else {
+      console.error('Server error:', err)
+      process.exit(1)
+    }
+  })
+
+  return server
+}
+
+const server = startServer(parseInt(PORT))
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

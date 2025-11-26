@@ -18,7 +18,7 @@ export const config = {
   
   // App settings
   app: {
-    name: 'LTSU Student Portal',
+    name: 'Helixa IQ Portal',
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development'
   }

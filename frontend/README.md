@@ -1,6 +1,6 @@
-# LTSU Student Portal — Starter
+# Helixa IQ Portal — Starter
 
-This is a scaffolded React + Vite + Tailwind + Firebase starter app for **LTSU Student Portal**.
+This is a scaffolded React + Vite + Tailwind + Firebase starter app for **Helixa IQ Portal**.
 
 ## Features included
 - Signup and login with Firebase Authentication (email/password).
@@ -26,7 +26,7 @@ VITE_FIREBASE_PROJECT_ID=your_project_id
 VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
-VITE_ALLOWED_DOMAIN=ltsu.edu
+VITE_ALLOWED_DOMAIN=helixa.iq
 ```
 4. Run the dev server:
 ```bash

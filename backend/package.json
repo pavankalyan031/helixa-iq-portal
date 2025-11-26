@@ -1,7 +1,7 @@
 {
-  "name": "ltsu-student-portal-backend",
+  "name": "helixa-iq-portal-backend",
   "version": "1.0.0",
-  "description": "Backend API server for LTSU Student Portal admin management system",
+  "description": "Backend API server for Helixa IQ Portal admin management system",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -12,15 +12,15 @@
     "format": "prettier --write ."
   },
   "keywords": [
-    "ltsu",
-    "student-portal",
+    "helixa",
+    "iq-portal",
     "admin",
     "backend",
     "api",
     "firebase",
     "express"
   ],
-  "author": "LTSU Development Team",
+  "author": "Helixa IQ Development Team",
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -56,10 +56,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ltsu/student-portal-backend.git"
+    "url": "https://github.com/helixa/iq-portal-backend.git"
   },
   "bugs": {
-    "url": "https://github.com/ltsu/student-portal-backend/issues"
+    "url": "https://github.com/helixa/iq-portal-backend/issues"
   },
-  "homepage": "https://github.com/ltsu/student-portal-backend#readme"
+  "homepage": "https://github.com/helixa/iq-portal-backend#readme"
 }

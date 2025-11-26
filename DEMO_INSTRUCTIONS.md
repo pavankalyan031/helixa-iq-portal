@@ -1,4 +1,4 @@
-# 🎉 LTSU Student Portal - Authentication System WORKING!
+# 🎉 Helixa IQ Portal - Authentication System WORKING!
 
 ## ✅ PROBLEM SOLVED!
 
@@ -77,7 +77,7 @@ Your original issues have been completely resolved:
 
 If you want to test immediately without registration:
 ```
-Email: admin@ltsu.edu
+Email: admin@helixa.iq
 Password: Admin123!
 ```
 
@@ -109,7 +109,7 @@ You'll know it's working when:
 1. **Test the registration process** as described above
 2. **Verify your email** when you receive the verification link
 3. **Login with your new credentials**
-4. **Enjoy your fully functional LMS portal!**
+4. **Enjoy your fully functional Helixa IQ Portal!**
 
 ---
 

@@ -15,10 +15,11 @@ export default function Signup(){
     rollNo:'', 
     countryCode:'+91'
   })
-  const [emailVerificationSent, setEmailVerificationSent] = React.useState(false)
+  const [accountCreated, setAccountCreated] = React.useState(false)
   const [err, setErr] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [showCountryPopup, setShowCountryPopup] = React.useState(false)
+  const [emailVerificationSent, setEmailVerificationSent] = React.useState(false)
   const navigate = useNavigate()
 
   const getSpecializationOptions = () => {
@@ -95,15 +96,24 @@ export default function Signup(){
       }
 
       const result = await authService.register(userData)
-      
-      setEmailVerificationSent(true)
+
+      setAccountCreated(true)
       console.log('Registration successful:', result)
-      
+
+      // Send verification email
+      try {
+        await authService.sendEmailVerification(userData.email)
+        console.log('Verification email sent')
+      } catch (verificationError) {
+        console.error('Failed to send verification email:', verificationError)
+        // Don't block registration if verification email fails
+      }
+
       // Show success message and redirect to login after delay
       setTimeout(() => {
         navigate('/login')
-      }, 5000)
-      
+      }, 3000)
+
     }catch(e){
       console.error('Signup error:', e)
       setErr(e.message || 'Failed to create account. Please try again.')
@@ -152,7 +162,7 @@ export default function Signup(){
               </div>
             )}
 
-            {emailVerificationSent && (
+            {accountCreated && (
               <div className="bg-green-500/20 backdrop-blur-sm border border-green-400/30 rounded-xl p-4">
                 <div className="flex items-center gap-2 text-green-200 text-sm font-medium">
                   <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
@@ -185,7 +195,7 @@ export default function Signup(){
                     <button
                       type="button"
                       onClick={() => setShowCountryPopup(!showCountryPopup)}
-                      disabled={loading || emailVerificationSent}
+                      disabled={loading || accountCreated}
                       className="px-3 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-l-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 min-w-[120px] text-left disabled:opacity-50"
                     >
                       {form.countryCode === '+91' ? '🇮🇳 +91' : 'Select Country'}
@@ -344,7 +354,7 @@ export default function Signup(){
 
             <button
               type="submit"
-              disabled={loading || emailVerificationSent}
+              disabled={loading || accountCreated}
               className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {loading ? (
@@ -352,8 +362,8 @@ export default function Signup(){
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                   Creating Account...
                 </div>
-              ) : emailVerificationSent ? (
-                'Verification Email Sent'
+              ) : accountCreated ? (
+                'Account Created Successfully'
               ) : (
                 'Create Account'
               )}

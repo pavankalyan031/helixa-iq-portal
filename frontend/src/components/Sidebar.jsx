@@ -6,8 +6,8 @@ export default function Sidebar(){
       <div className="flex items-center gap-3 mb-6">
         <img src="/assets/images/logo.png" className="w-12 h-12" alt="logo" />
         <div>
-          <div className="font-bold">LTSU</div>
-          <div className="text-xs text-gray-500">Student Portal</div>
+          <div className="font-bold">Helixa IQ</div>
+          <div className="text-xs text-gray-500">Portal</div>
         </div>
       </div>
       <nav className="space-y-2 text-sm">

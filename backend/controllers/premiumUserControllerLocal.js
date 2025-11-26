@@ -12,8 +12,16 @@ class PremiumUserController {
   // Register new premium user
   async register(userData) {
     try {
+      console.log('Received registration data:', userData)
+
       // Validate required fields
       if (!userData.firstName || !userData.lastName || !userData.email || !userData.password) {
+        console.log('Missing fields:', {
+          firstName: !!userData.firstName,
+          lastName: !!userData.lastName,
+          email: !!userData.email,
+          password: !!userData.password
+        })
         return {
           success: false,
           error: 'Missing required fields: firstName, lastName, email, and password are required'
@@ -76,11 +84,11 @@ class PremiumUserController {
 
       // Add to database
       const result = this.db.addUser(newUser)
-      
+
       if (result.success) {
         const userData = result.data
         delete userData.password // Remove sensitive data from response
-        
+
         return {
           success: true,
           message: 'Premium user registered successfully',
@@ -110,7 +118,7 @@ class PremiumUserController {
     try {
       // Find user by email
       const userResult = this.db.findUserByEmail(email)
-      
+
       if (!userResult.success) {
         return {
           success: false,
@@ -119,10 +127,10 @@ class PremiumUserController {
       }
 
       const user = userResult.data
-      
+
       // Verify password
       const isValidPassword = await bcrypt.compare(password, user.password)
-      
+
       if (!isValidPassword) {
         return {
           success: false,
@@ -281,8 +289,9 @@ class PremiumUserController {
   // Check if user can access LMS (for quick validation)
   async canAccessLMS(email) {
     try {
-      const userResult = this.getUserByEmail(email)
-      
+      // Call database method directly
+      const userResult = this.db.findUserByEmail(email)
+
       if (!userResult.success) {
         return {
           success: false,
@@ -292,7 +301,7 @@ class PremiumUserController {
       }
 
       const user = userResult.data
-      
+
       return {
         success: true,
         canAccess: user.lmsAccess && user.status === 'active',

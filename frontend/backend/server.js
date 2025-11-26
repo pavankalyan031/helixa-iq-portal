@@ -11,7 +11,9 @@ import apiRoutes from './routes/api.js'
 
 // Initialize Express app
 const app = express()
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT || 3002
+console.log('PORT from env:', process.env.PORT)
+console.log('Using PORT:', PORT)
 
 // Security middleware
 app.use(helmet())

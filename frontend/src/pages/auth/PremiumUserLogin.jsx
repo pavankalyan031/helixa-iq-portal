@@ -72,17 +72,12 @@ const PremiumUserLogin = () => {
 
       if (data.success) {
         // Store user data and token
-        localStorage.setItem('lms_user', JSON.stringify(data.data.user))
-        localStorage.setItem('lms_token', data.data.token)
-        
-        setSuccess('Login successful! Redirecting to LMS Portal...')
+        localStorage.setItem('helixa_premium_user', JSON.stringify(data.data))
+        localStorage.setItem('helixa_token', data.data.token || 'premium_token')
+
+        setSuccess(data.message || 'Login successful! Redirecting to Helixa IQ Portal...')
         setTimeout(() => {
-          navigate('/lms-portal', { 
-            state: { 
-              user: data.data.user,
-              token: data.data.token
-            }
-          })
+          navigate('/lms-portal')
         }, 1500)
       } else {
         setError(data.error || 'Login failed. Please check your credentials.')
@@ -139,8 +134,8 @@ const PremiumUserLogin = () => {
           <div className="logo-section">
             <img src="/assets/images/ltsu-custom-logo.png" alt="LTSU" className="auth-logo" />
             <div className="auth-title">
-              <h1>LTSU Premium</h1>
-              <p>Learning Management System Login</p>
+              <h1>Helixa IQ Portal</h1>
+              <p>Portal Login</p>
             </div>
           </div>
         </div>
@@ -195,7 +190,7 @@ const PremiumUserLogin = () => {
             className="submit-btn"
             disabled={loading}
           >
-            {loading ? 'Logging in...' : 'Login to LMS Portal'}
+            {loading ? 'Logging in...' : 'Login to Helixa IQ Portal'}
           </button>
         </form>
 

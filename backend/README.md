@@ -1,8 +1,8 @@
-# LTSU Student Portal - Backend Management System
+# Helixa IQ Portal - Backend Management System
 
 ## 📁 Backend Folder Structure
 
-This backend system provides comprehensive administrative control over the LTSU Student Portal, similar to how live websites manage their content and user data dynamically.
+This backend system provides comprehensive administrative control over the Helixa IQ Portal, similar to how live websites manage their content and user data dynamically.
 
 ## 🏗️ Architecture Overview
 
@@ -97,7 +97,7 @@ backend/
   uid: "firebase-user-id",
   firstName: "John",
   lastName: "Doe",
-  email: "john@ltsu.edu",
+  email: "john@helixa.iq",
   studentId: "23100010001",
   // ... complete profile data
 }
@@ -206,4 +206,4 @@ Comprehensive API documentation is available in the `docs/` folder, including:
 
 ---
 
-This backend system provides enterprise-level administrative control over the LTSU Student Portal, enabling dynamic content management, user administration, and comprehensive system monitoring - just like professional web applications.
+This backend system provides enterprise-level administrative control over the Helixa IQ Portal, enabling dynamic content management, user administration, and comprehensive system monitoring - just like professional web applications.

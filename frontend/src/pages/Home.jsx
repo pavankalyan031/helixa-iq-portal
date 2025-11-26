@@ -413,7 +413,7 @@ export default function Home({user}){
               {/* Premium Access Section */}
               <div className="mt-8 p-8 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-2xl rounded-3xl shadow-2xl border border-yellow-400/30 text-center">
                 <div className="text-6xl mb-4">⭐</div>
-                <h3 className="text-3xl font-bold text-white mb-4">LTSU Premium Access</h3>
+                <h3 className="text-3xl font-bold text-white mb-4">Helixa IQ Portal Access</h3>
                 <p className="text-white/90 text-lg mb-6">
                   Get access to advanced courses, career services, mentorship, and exclusive opportunities
                 </p>
@@ -432,18 +432,18 @@ export default function Home({user}){
                     onClick={() => navigate('/premium-login', { 
                       state: { 
                         fromStudentPortal: true,
-                        message: 'Welcome back! Please login to access your premium LMS portal.' 
+                        message: 'Welcome back! Please login to access your premium Helixa IQ Portal.'
                       }
                     })}
                     className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
-                    🎓 Login to LMS Portal
+                    🎓 Login to Helixa IQ Portal
                   </button>
                 </div>
                 
                 <div className="mt-4 p-4 bg-white/10 rounded-lg border border-white/20">
                   <p className="text-white/90 text-sm">
-                    💡 <strong>Already a premium member?</strong> Use the LMS Portal login above to access your courses, progress tracking, and premium features.
+                    💡 <strong>Already a premium member?</strong> Use the Helixa IQ Portal login above to access your courses, progress tracking, and premium features.
                   </p>
                 </div>
               </div>
@@ -617,7 +617,7 @@ export default function Home({user}){
 
               <div className="relative z-10">
                 <div className="text-center mb-8">
-                  <h3 className="text-4xl font-bold text-white mb-4">About LTSU Student Portal</h3>
+                  <h3 className="text-4xl font-bold text-white mb-4">About LTSU Student & Helixa IQ Portal</h3>
                   <div className="w-24 h-1 bg-gradient-to-r from-blue-400 to-purple-400 mx-auto mb-6"></div>
                 </div>
                 <div className="max-w-4xl mx-auto text-center mb-8">

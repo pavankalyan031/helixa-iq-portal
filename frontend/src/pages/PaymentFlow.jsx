@@ -176,9 +176,13 @@ const PaymentFlow = () => {
 
     try {
       // Combine all form data
+      const nameParts = formData.fullName.trim().split(' ')
+      const firstName = nameParts[0] || ''
+      const lastName = nameParts.slice(1).join(' ') || firstName // Use firstName as lastName if only one name provided
+
       const registrationData = {
-        firstName: formData.fullName.split(' ')[0],
-        lastName: formData.fullName.split(' ').slice(1).join(' ') || '',
+        firstName: firstName,
+        lastName: lastName,
         email: formData.email,
         password: formData.password,
         phoneNumber: formData.countryCode + formData.phoneNumber, // Combine country code with phone number
@@ -196,7 +200,9 @@ const PaymentFlow = () => {
         lmsAccess: true // Grant immediate access
       }
 
-      const response = await fetch('http://localhost:3002/api/premium/register', {
+      console.log('Sending registration data:', registrationData)
+
+      const response = await fetch('http://localhost:3001/api/premium/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -221,7 +227,7 @@ const PaymentFlow = () => {
           }
           
           // Store user data for LMS access
-          localStorage.setItem('ltsu_premium_user', JSON.stringify(userData))
+          localStorage.setItem('helixa_premium_user', JSON.stringify(userData))
           
           navigate('/lms-portal', {
             state: {
@@ -471,7 +477,6 @@ const PaymentFlow = () => {
           <option value="2">2nd Year</option>
           <option value="3">3rd Year</option>
           <option value="4">4th Year</option>
-          <option value="5">5th Year</option>
         </select>
       </div>
 

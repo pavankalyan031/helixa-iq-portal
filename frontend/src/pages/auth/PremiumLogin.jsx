@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { config } from '../../utils/config'
 
 const PremiumLogin = () => {
   const navigate = useNavigate()
@@ -36,24 +37,24 @@ const PremiumLogin = () => {
     setSuccess('')
 
     try {
-      const response = await fetch('http://localhost:3002/api/premium/check-access', {
+      const response = await fetch(`${config.API_BASE_URL}/premium/check-access`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ email: formData.email })
       })
-      
+
       const data = await response.json()
-      
+
       if (data.success && data.canAccess) {
-        setSuccess('🎉 Premium access confirmed! You can now login to access your LMS portal.')
+        setSuccess('🎉 Premium access confirmed! You can now login to access your Helixa IQ Portal.')
       } else {
-        setError('❌ Premium access not found. Please register or upgrade your premium plan to access the LMS portal.')
+        setError('❌ Premium access not found. Please register or upgrade your premium plan to access the Helixa IQ Portal.')
       }
     } catch (error) {
       console.error('Error checking premium access:', error)
-      setError('❌ Network error. Please check your connection and try again.')
+      setError(`❌ Network error: ${error.message}. Please check your connection and try again.`)
     } finally {
       setVerificationLoading(false)
     }
@@ -65,7 +66,7 @@ const PremiumLogin = () => {
     setLoading(true)
 
     try {
-      const response = await fetch('http://localhost:3002/api/premium/login', {
+      const response = await fetch(`${config.API_BASE_URL}/premium/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -76,14 +77,14 @@ const PremiumLogin = () => {
       const data = await response.json()
 
       if (data.success) {
-        setSuccess('Login successful! Redirecting to LMS Portal...')
+        setSuccess('Login successful! Redirecting to Helixa IQ Portal...')
         // Store user data and redirect
         localStorage.setItem('ltsu_premium_user', JSON.stringify(data.data))
         setTimeout(() => {
-          navigate('/lms-portal', { 
-            state: { 
+          navigate('/lms-portal', {
+            state: {
               user: data.data,
-              message: 'Welcome to LTSU Premium LMS!' 
+              message: 'Welcome to Helixa IQ Portal!'
             }
           })
         }, 1500)
@@ -92,7 +93,7 @@ const PremiumLogin = () => {
       }
     } catch (error) {
       console.error('Login error:', error)
-      setError('Network error. Please check your connection and try again.')
+      setError(`Network error: ${error.message}. Please check your connection and try again.`)
     } finally {
       setLoading(false)
     }
@@ -112,15 +113,15 @@ const PremiumLogin = () => {
               />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">LTSU Premium</h1>
-          <p className="text-gray-400 text-lg">Learning Management System Login</p>
+          <h1 className="text-2xl font-bold text-white mb-2">Helixa IQ Portal</h1>
+          <p className="text-gray-400 text-lg">Portal Login</p>
         </div>
 
         {/* Login Form */}
         <div className="bg-gray-800/50 backdrop-blur-xl border-4 border-blue-500/30 rounded-2xl p-8 shadow-2xl">
           <div className="text-center mb-6">
             <h2 className="text-xl font-semibold text-white mb-2">Welcome back!</h2>
-            <p className="text-gray-400 text-sm">Please login to access your premium LMS portal.</p>
+            <p className="text-gray-400 text-sm">Please login to access your premium Helixa IQ Portal.</p>
           </div>
 
           {message && (
@@ -194,7 +195,7 @@ const PremiumLogin = () => {
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
             >
-              {loading ? 'Logging in...' : 'Login to LMS Portal'}
+              {loading ? 'Logging in...' : 'Login to Helixa IQ Portal'}
             </button>
           </form>
 

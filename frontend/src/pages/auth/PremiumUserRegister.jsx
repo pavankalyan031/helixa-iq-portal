@@ -116,7 +116,7 @@ const PremiumUserRegister = () => {
     setLoading(true)
 
     try {
-      const response = await fetch('http://localhost:3002/api/premium/register', {
+      const response = await fetch('http://localhost:3001/api/premium/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -285,7 +285,6 @@ const PremiumUserRegister = () => {
                   <option value="2">2nd Year</option>
                   <option value="3">3rd Year</option>
                   <option value="4">4th Year</option>
-                  <option value="5">5th Year</option>
                 </select>
               </div>
               <div className="form-group">
