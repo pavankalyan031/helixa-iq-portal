@@ -280,6 +280,27 @@ const LMSPortal = ({ user }) => {
     checkLMSAccess()
   }, [navigate])
 
+  // Handle navigation state for back button functionality
+  useEffect(() => {
+    const handleNavigationState = () => {
+      // Check if we have navigation state indicating where user came from
+      const navigationState = window.history.state?.usr?.fromSection
+      if (navigationState) {
+        setActiveSection(navigationState)
+      }
+    }
+
+    // Listen for popstate events (browser back/forward buttons)
+    window.addEventListener('popstate', handleNavigationState)
+
+    // Also check on initial load
+    handleNavigationState()
+
+    return () => {
+      window.removeEventListener('popstate', handleNavigationState)
+    }
+  }, [])
+
   // Fetch real user progress data
   const fetchUserProgress = async (userId) => {
     try {
@@ -737,7 +758,7 @@ const LMSPortal = ({ user }) => {
               </div>
             </div>
             <button
-              onClick={() => navigate('/master-coding-sheet')}
+              onClick={() => navigate('/master-coding-sheet', { state: { fromSection: 'dashboard' } })}
               className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
             >
               Start Practicing
@@ -1162,7 +1183,7 @@ const LMSPortal = ({ user }) => {
             </div>
 
             <button
-              onClick={() => course.id === 0 ? navigate('/master-coding-sheet?topic=aptitude') : course.id === 1 ? setShowDSAOptions(true) : course.id === 2 ? navigate('/fullstack-practice') : course.id === 3 ? navigate('/programming-language-selection') : course.id === 4 ? navigate('/ai-practice') : course.id === 5 ? navigate('/ml-practice') : course.id === 6 ? navigate('/ds-practice') : navigate('/master-coding-sheet')}
+              onClick={() => course.id === 0 ? navigate('/master-coding-sheet?topic=aptitude', { state: { fromSection: 'placement' } }) : course.id === 1 ? setShowDSAOptions(true) : course.id === 2 ? navigate('/fullstack-practice', { state: { fromSection: 'placement' } }) : course.id === 3 ? navigate('/programming-language-selection', { state: { fromSection: 'placement' } }) : course.id === 4 ? navigate('/ai-practice', { state: { fromSection: 'placement' } }) : course.id === 5 ? navigate('/ml-practice', { state: { fromSection: 'placement' } }) : course.id === 6 ? navigate('/ds-practice', { state: { fromSection: 'placement' } }) : navigate('/master-coding-sheet', { state: { fromSection: 'placement' } })}
               className="w-full px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
             >
               Practice
@@ -1180,6 +1201,42 @@ const LMSPortal = ({ user }) => {
           <h3 className="text-white font-semibold mb-2">🎯 Find Your Dream Internship or Job</h3>
           <p className="text-indigo-100 text-sm">Discover curated internship and job opportunities from top companies worldwide, including tech giants, startups, and global organizations.</p>
         </div>
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <button
+          onClick={() => navigate('/internships-for-students')}
+          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+        >
+          <div className="text-center">
+            <div className="text-3xl mb-2">🎓</div>
+            <h3 className="text-lg">Internships for Students</h3>
+            <p className="text-sm opacity-90">Browse live internship opportunities</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => navigate('/full-time-jobs')}
+          className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+        >
+          <div className="text-center">
+            <div className="text-3xl mb-2">💼</div>
+            <h3 className="text-lg">Full Time Jobs</h3>
+            <p className="text-sm opacity-90">Explore full-time career opportunities</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => navigate('/internships-job-platforms')}
+          className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+        >
+          <div className="text-center">
+            <div className="text-3xl mb-2">🌟</div>
+            <h3 className="text-lg">Internships and Job Openings Platforms</h3>
+            <p className="text-sm opacity-90">Browse top platforms and websites</p>
+          </div>
+        </button>
       </div>
 
       {/* Top Free Platforms */}
@@ -1775,6 +1832,31 @@ const LMSPortal = ({ user }) => {
         </div>
       </div>
 
+      {/* Navigation Buttons */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <button
+          onClick={() => navigate('/hackathons-live')}
+          className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+        >
+          <div className="text-center">
+            <div className="text-3xl mb-2">🏆</div>
+            <h3 className="text-lg">Live Hackathons</h3>
+            <p className="text-sm opacity-90">Browse active hackathons and competitions</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => navigate('/hackathons-platforms')}
+          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+        >
+          <div className="text-center">
+            <div className="text-3xl mb-2">🌟</div>
+            <h3 className="text-lg">Hackathons Platforms</h3>
+            <p className="text-sm opacity-90">Browse top hackathon platforms and websites</p>
+          </div>
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <a
           href="https://devpost.com/hackathons"
@@ -2135,6 +2217,31 @@ const LMSPortal = ({ user }) => {
           <h3 className="text-white font-semibold mb-2">💰 Start Your Freelancing Journey</h3>
           <p className="text-yellow-100 text-sm">Find freelance opportunities, build your skills, and create a portfolio to land high-paying projects.</p>
         </div>
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <button
+          onClick={() => navigate('/freelancing-live-works')}
+          className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+        >
+          <div className="text-center">
+            <div className="text-3xl mb-2">💼</div>
+            <h3 className="text-lg">Freelancing Live Works</h3>
+            <p className="text-sm opacity-90">Browse current freelancing opportunities</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => navigate('/freelancing-platforms')}
+          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+        >
+          <div className="text-center">
+            <div className="text-3xl mb-2">🌟</div>
+            <h3 className="text-lg">Freelancing Work Platforms</h3>
+            <p className="text-sm opacity-90">Browse top freelancing platforms and websites</p>
+          </div>
+        </button>
       </div>
 
       {/* Top FREE Freelancing Platforms */}
@@ -3120,7 +3227,7 @@ const LMSPortal = ({ user }) => {
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block w-72 bg-gray-800 border-r border-gray-700 flex-shrink-0">
-          <nav className="p-3 h-full overflow-y-auto">
+          <nav className="p-3 h-full">
             <ul className="space-y-1">
               {menuItems.map(item => (
                 <li key={item.id}>

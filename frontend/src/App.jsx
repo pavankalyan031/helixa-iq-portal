@@ -58,6 +58,13 @@ import LangchainVideoPlayer from './pages/LangchainVideoPlayer'
 import GitGitHubVideoPlayer from './pages/GitGitHubVideoPlayer'
 import SQLVideoPlayer from './pages/SQLVideoPlayer'
 import LinuxVideoPlayer from './pages/LinuxVideoPlayer'
+import InternshipsForStudents from './pages/InternshipsForStudents'
+import FullTimeJobs from './pages/FullTimeJobs'
+import HackathonsLive from './pages/HackathonsLive'
+import FreelancingLiveWorks from './pages/FreelancingLiveWorks'
+import InternshipsJobPlatforms from './pages/InternshipsJobPlatforms'
+import HackathonsPlatforms from './pages/HackathonsPlatforms'
+import FreelancingPlatforms from './pages/FreelancingPlatforms'
 import Chatbot from './components/Chatbot'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from './firebase'
@@ -130,6 +137,13 @@ function App(){
         <Route path="/git-github-video-player" element={<GitGitHubVideoPlayer />} />
         <Route path="/sql-video-player" element={<SQLVideoPlayer />} />
         <Route path="/linux-video-player" element={<LinuxVideoPlayer />} />
+        <Route path="/internships-for-students" element={<InternshipsForStudents />} />
+        <Route path="/full-time-jobs" element={<FullTimeJobs />} />
+        <Route path="/hackathons-live" element={<HackathonsLive />} />
+        <Route path="/freelancing-live-works" element={<FreelancingLiveWorks />} />
+        <Route path="/internships-job-platforms" element={<InternshipsJobPlatforms />} />
+        <Route path="/hackathons-platforms" element={<HackathonsPlatforms />} />
+        <Route path="/freelancing-platforms" element={<FreelancingPlatforms />} />
         <Route path="/" element={ user ? <Home user={user} /> : <Navigate to='/login' />} />
       </Routes>
       {user && <Chatbot user={user} />}
