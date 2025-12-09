@@ -18,7 +18,7 @@ const HackathonsLive = () => {
       managedBy: "Devpost",
       tags: ["Machine Learning/AI", "Enterprise", "Productivity"],
       featured: true,
-      description: "Build innovative solutions for the racing industry using Atlassian's platform"
+      description: ""
     },
     {
       id: 2,
@@ -32,7 +32,7 @@ const HackathonsLive = () => {
       managedBy: "Devpost",
       tags: ["Databases", "Machine Learning/AI"],
       featured: false,
-      description: "Create data visualizations and analytics solutions using Tableau"
+      description: ""
     },
     {
       id: 3,
@@ -46,7 +46,7 @@ const HackathonsLive = () => {
       managedBy: "Unstop",
       tags: ["AI/ML", "Innovation"],
       featured: false,
-      description: "Develop AI-powered solutions for real-world problems"
+      description: ""
     }
   ]
 

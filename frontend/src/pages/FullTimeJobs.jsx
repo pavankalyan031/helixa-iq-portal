@@ -15,7 +15,7 @@ const FullTimeJobs = () => {
       experience: "0-2 years",
       salary: "₹8-12 LPA",
       type: "Full-time",
-      description: "Join our dynamic team to build scalable web applications",
+      description: "",
       applyLink: "https://example.com/apply1",
       skills: ["JavaScript", "React", "Node.js", "MongoDB"],
       postedDate: new Date(),
@@ -30,7 +30,7 @@ const FullTimeJobs = () => {
       experience: "1-3 years",
       salary: "₹10-15 LPA",
       type: "Full-time",
-      description: "Work with large datasets and build ML models for business insights",
+      description: "",
       applyLink: "https://example.com/apply2",
       skills: ["Python", "Machine Learning", "SQL", "Tableau"],
       postedDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
@@ -45,7 +45,7 @@ const FullTimeJobs = () => {
       experience: "2-4 years",
       salary: "₹12-18 LPA",
       type: "Full-time",
-      description: "Create amazing user experiences with modern web technologies",
+      description: "",
       applyLink: "https://example.com/apply3",
       skills: ["React", "TypeScript", "CSS", "Figma"],
       postedDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago

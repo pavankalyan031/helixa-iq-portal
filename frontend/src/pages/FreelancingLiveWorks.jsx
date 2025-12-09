@@ -4,6 +4,11 @@ import { useNavigate } from 'react-router-dom'
 const FreelancingLiveWorks = () => {
   const navigate = useNavigate()
 
+  // Filter states
+  const [selectedCategory, setSelectedCategory] = useState('All Categories')
+  const [selectedBudget, setSelectedBudget] = useState('All Budgets')
+  const [selectedExperience, setSelectedExperience] = useState('All Experience Levels')
+
   // Sample freelancing work data - in a real app, this would come from an API
   const freelancingWorks = [
     {
@@ -13,11 +18,12 @@ const FreelancingLiveWorks = () => {
       budget: "$500 - $800",
       duration: "2-3 weeks",
       skills: ["React", "Node.js", "MongoDB", "Stripe"],
-      description: "Build a modern e-commerce website with payment integration and admin dashboard",
+      description: "",
       postedDate: new Date(),
       proposals: 12,
       experience: "Intermediate",
-      type: "Fixed Price"
+      type: "Fixed Price",
+      category: "Web Development"
     },
     {
       id: 2,
@@ -26,11 +32,12 @@ const FreelancingLiveWorks = () => {
       budget: "$300 - $600",
       duration: "1-2 weeks",
       skills: ["Figma", "Adobe XD", "Mobile Design", "Prototyping"],
-      description: "Create stunning UI/UX designs for a fitness tracking mobile application",
+      description: "",
       postedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
       proposals: 8,
       experience: "Expert",
-      type: "Fixed Price"
+      type: "Fixed Price",
+      category: "Design"
     },
     {
       id: 3,
@@ -39,11 +46,12 @@ const FreelancingLiveWorks = () => {
       budget: "$50/hour",
       duration: "Ongoing",
       skills: ["Python", "Pandas", "Tableau", "SQL"],
-      description: "Analyze sales data and create interactive dashboards for business insights",
+      description: "",
       postedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
       proposals: 15,
       experience: "Intermediate",
-      type: "Hourly"
+      type: "Hourly",
+      category: "Data Analysis"
     },
     {
       id: 4,
@@ -52,13 +60,69 @@ const FreelancingLiveWorks = () => {
       budget: "$200 - $400",
       duration: "1 week",
       skills: ["WordPress", "PHP", "CSS", "JavaScript"],
-      description: "Customize existing WordPress theme and add custom functionality",
+      description: "",
       postedDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
       proposals: 6,
       experience: "Beginner",
-      type: "Fixed Price"
+      type: "Fixed Price",
+      category: "Web Development"
     }
   ]
+
+  // Filter the freelancing works based on selected filters
+  const filteredWorks = freelancingWorks.filter(work => {
+    const categoryMatch = selectedCategory === 'All Categories' || work.category === selectedCategory
+    const experienceMatch = selectedExperience === 'All Experience Levels' || work.experience === selectedExperience
+
+    // Budget filtering logic
+    let budgetMatch = true
+    if (selectedBudget !== 'All Budgets') {
+      if (work.type === 'Hourly') {
+        // For hourly, check if the rate falls within the range
+        const rate = parseInt(work.budget.replace('$', '').replace('/hour', ''))
+        switch (selectedBudget) {
+          case '$0 - $100':
+            budgetMatch = rate >= 0 && rate <= 100
+            break
+          case '$100 - $500':
+            budgetMatch = rate >= 100 && rate <= 500
+            break
+          case '$500 - $1000':
+            budgetMatch = rate >= 500 && rate <= 1000
+            break
+          case '$1000+':
+            budgetMatch = rate >= 1000
+            break
+          default:
+            budgetMatch = true
+        }
+      } else {
+        // For fixed price, check the range
+        const budgetRange = work.budget.replace('$', '').split(' - ')
+        const minBudget = parseInt(budgetRange[0])
+        const maxBudget = parseInt(budgetRange[1] || budgetRange[0])
+
+        switch (selectedBudget) {
+          case '$0 - $100':
+            budgetMatch = maxBudget <= 100
+            break
+          case '$100 - $500':
+            budgetMatch = minBudget >= 100 && maxBudget <= 500
+            break
+          case '$500 - $1000':
+            budgetMatch = minBudget >= 500 && maxBudget <= 1000
+            break
+          case '$1000+':
+            budgetMatch = minBudget >= 1000
+            break
+          default:
+            budgetMatch = true
+        }
+      }
+    }
+
+    return categoryMatch && experienceMatch && budgetMatch
+  })
 
   const formatDate = (date) => {
     const now = new Date()
@@ -115,7 +179,11 @@ const FreelancingLiveWorks = () => {
 
         {/* Filter/Sort Options */}
         <div className="mb-6 flex flex-wrap gap-4">
-          <select className="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             <option>All Categories</option>
             <option>Web Development</option>
             <option>Mobile Development</option>
@@ -123,14 +191,22 @@ const FreelancingLiveWorks = () => {
             <option>Data Analysis</option>
             <option>Writing</option>
           </select>
-          <select className="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select
+            value={selectedBudget}
+            onChange={(e) => setSelectedBudget(e.target.value)}
+            className="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             <option>All Budgets</option>
             <option>$0 - $100</option>
             <option>$100 - $500</option>
             <option>$500 - $1000</option>
             <option>$1000+</option>
           </select>
-          <select className="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select
+            value={selectedExperience}
+            onChange={(e) => setSelectedExperience(e.target.value)}
+            className="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             <option>All Experience Levels</option>
             <option>Beginner</option>
             <option>Intermediate</option>
@@ -140,7 +216,7 @@ const FreelancingLiveWorks = () => {
 
         {/* Freelancing Work Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {freelancingWorks.map((work) => (
+          {filteredWorks.map((work) => (
             <div key={work.id} className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-green-500 transition-colors">
               <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex-1">

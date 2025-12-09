@@ -50,6 +50,12 @@ import CppVideoPlayer from './pages/CppVideoPlayer'
 import JavaVideoPlayer from './pages/JavaVideoPlayer'
 import CppVideoPlayerSingle from './pages/CppVideoPlayerSingle'
 import MasterCodingSheet from './pages/MasterCodingSheet'
+import PythonDSAVideos from './pages/PythonDSAVideos'
+import PythonDSAVideoPlayer from './pages/PythonDSAVideoPlayer'
+import DSALanguageSelection from './pages/DSALanguageSelection'
+import CppDSAVideos from './pages/CppDSAVideos'
+import JavaDSAVideos from './pages/JavaDSAVideos'
+import JavaDSAVideoPlayer from './pages/JavaDSAVideoPlayer'
 import GenAIVideoPlayer from './pages/GenAIVideoPlayer'
 import AgenticAIVideoPlayer from './pages/AgenticAIVideoPlayer'
 import DevOpsVideoPlayer from './pages/DevOpsVideoPlayer'
@@ -129,6 +135,12 @@ function App(){
         <Route path="/cpp-video-player" element={<CppVideoPlayer />} />
         <Route path="/java-video-player" element={<JavaVideoPlayer />} />
         <Route path="/master-coding-sheet" element={<MasterCodingSheet />} />
+        <Route path="/python-dsa-videos" element={<PythonDSAVideos />} />
+        <Route path="/python-dsa-video-player" element={<PythonDSAVideoPlayer />} />
+        <Route path="/java-dsa-video-player" element={<JavaDSAVideoPlayer />} />
+        <Route path="/dsa-language-selection" element={<DSALanguageSelection />} />
+        <Route path="/cpp-dsa-videos" element={<CppDSAVideos />} />
+        <Route path="/java-dsa-videos" element={<JavaDSAVideos />} />
         <Route path="/gen-ai-video-player" element={<GenAIVideoPlayer />} />
         <Route path="/agentic-ai-video-player" element={<AgenticAIVideoPlayer />} />
         <Route path="/devops-video-player" element={<DevOpsVideoPlayer />} />

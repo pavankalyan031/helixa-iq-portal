@@ -15,7 +15,7 @@ const InternshipsForStudents = () => {
       batch: "Freshers & Undergraduates",
       stipend: "₹10,000/Month",
       duration: "6 Months",
-      description: "🚀 Backend + Next.js Lovers, This One's for You!",
+      description: "",
       applyLink: "https://shorturl.at/m1Ir0",
       referralNote: "Entangle referral window open (only open till December 9th before 12pm)",
       postedDate: new Date(),
@@ -30,7 +30,7 @@ const InternshipsForStudents = () => {
       batch: "Final-year students from technical backgrounds",
       stipend: "₹8,000/Month",
       duration: "6 Months",
-      description: "Work with real datasets and build analytical models",
+      description: "",
       applyLink: "https://shorturl.at/5DJWo",
       referralNote: "",
       postedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
@@ -45,7 +45,7 @@ const InternshipsForStudents = () => {
       batch: "All undergraduate students",
       stipend: "₹12,000/Month",
       duration: "4 Months",
-      description: "Build modern web applications with React and TypeScript",
+      description: "",
       applyLink: "https://example.com/apply3",
       referralNote: "",
       postedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
