@@ -1,7 +1,20 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, createContext, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { auth } from '../firebase'
+import { auth, db } from '../firebase'
+import { collection, doc, getDoc, setDoc, updateDoc, query, where, getDocs, orderBy, limit, addDoc } from 'firebase/firestore'
+import { COLLECTIONS } from '../utils/databaseSchema'
+
+// Create Progress Context
+export const ProgressContext = createContext()
+
+export const useProgress = () => {
+  const context = useContext(ProgressContext)
+  if (!context) {
+    throw new Error('useProgress must be used within a ProgressProvider')
+  }
+  return context
+}
 
 const WhatsAppContact = ({ phoneNumber = '+919391485316' }) => {
   const handleWhatsAppClick = () => {
@@ -206,6 +219,19 @@ const LMSPortal = ({ user }) => {
   const [accessDenied, setAccessDenied] = useState(false)
   const [showDSAOptions, setShowDSAOptions] = useState(false)
   const [alumniActiveTabs, setAlumniActiveTabs] = useState({})
+  const [alumniSearchTerm, setAlumniSearchTerm] = useState('')
+
+  // Real-time user progress data
+  const [userProgress, setUserProgress] = useState({
+    totalProblemsSolved: 0,
+    studyStreak: 0,
+    totalStudyHours: 0,
+    certificatesEarned: 0,
+    currentWeekHours: 0,
+    achievements: []
+  })
+  const [liveSessions, setLiveSessions] = useState([])
+  const [recentAchievements, setRecentAchievements] = useState([])
 
   useEffect(() => {
     const checkLMSAccess = async () => {
@@ -223,6 +249,10 @@ const LMSPortal = ({ user }) => {
           } else {
             setUserDisplayName(userData.email?.split('@')[0] || 'Premium User')
           }
+
+          // Fetch real user progress and live sessions
+          await fetchUserProgress(userData.id || userData.uid)
+          await fetchLiveSessions()
 
           setLoading(false)
           return
@@ -249,6 +279,271 @@ const LMSPortal = ({ user }) => {
 
     checkLMSAccess()
   }, [navigate])
+
+  // Fetch real user progress data
+  const fetchUserProgress = async (userId) => {
+    try {
+      // Get user progress document
+      const progressDoc = await getDoc(doc(db, COLLECTIONS.USER_PROGRESS, userId))
+      if (progressDoc.exists()) {
+        const progressData = progressDoc.data()
+        setUserProgress(progressData)
+      } else {
+        // Initialize user progress if it doesn't exist
+        const initialProgress = {
+          userId,
+          totalProblemsSolved: 0,
+          studyStreak: 0,
+          totalStudyHours: 0,
+          certificatesEarned: 0,
+          currentWeekHours: 0,
+          achievements: [],
+          lastActivityDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+        await setDoc(doc(db, COLLECTIONS.USER_PROGRESS, userId), initialProgress)
+        setUserProgress(initialProgress)
+      }
+
+      // Get recent achievements
+      const achievementsQuery = query(
+        collection(db, COLLECTIONS.ACHIEVEMENTS),
+        where('userId', '==', userId),
+        orderBy('earnedAt', 'desc'),
+        limit(3)
+      )
+      const achievementsSnapshot = await getDocs(achievementsQuery)
+      const achievementsData = achievementsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      setRecentAchievements(achievementsData)
+
+    } catch (error) {
+      console.error('Error fetching user progress:', error)
+      // Fallback to default values
+      setUserProgress({
+        totalProblemsSolved: 0,
+        studyStreak: 0,
+        totalStudyHours: 0,
+        certificatesEarned: 0,
+        currentWeekHours: 0,
+        achievements: []
+      })
+    }
+  }
+
+  // Fetch upcoming live sessions
+  const fetchLiveSessions = async () => {
+    try {
+      const sessionsQuery = query(
+        collection(db, COLLECTIONS.LIVE_SESSIONS),
+        where('status', '==', 'upcoming'),
+        orderBy('scheduledAt', 'asc'),
+        limit(3)
+      )
+      const sessionsSnapshot = await getDocs(sessionsQuery)
+      const sessionsData = sessionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      setLiveSessions(sessionsData)
+    } catch (error) {
+      console.error('Error fetching live sessions:', error)
+      // Fallback to default sessions
+      setLiveSessions([
+        {
+          title: 'Advanced DSA Techniques',
+          instructor: '',
+          scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+          duration: 90,
+          enrolledCount: 156
+        },
+        {
+          title: 'System Design Interview Prep',
+          instructor: '',
+          scheduledAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // Day after tomorrow
+          duration: 120,
+          enrolledCount: 89
+        },
+        {
+          title: 'AI/ML Career Guidance',
+          instructor: '',
+          scheduledAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // Friday
+          duration: 60,
+          enrolledCount: 203
+        }
+      ])
+    }
+  }
+
+  // Track user activity and update progress
+  const trackUserActivity = async (activityType, data = {}) => {
+    try {
+      const userId = premiumUser?.id || premiumUser?.uid
+      if (!userId) return
+
+      const now = new Date()
+
+      // Update user progress based on activity type
+      let progressUpdate = {}
+
+      switch (activityType) {
+        case 'problem_solved':
+          progressUpdate = {
+            totalProblemsSolved: (userProgress.totalProblemsSolved || 0) + 1,
+            lastActivityDate: now,
+            updatedAt: now
+          }
+
+          // Record the problem solve
+          await addDoc(collection(db, COLLECTIONS.PROBLEM_SOLVES), {
+            userId,
+            problemId: data.problemId,
+            topicId: data.topicId,
+            difficulty: data.difficulty,
+            solvedAt: now,
+            timeSpent: data.timeSpent || 0,
+            attempts: data.attempts || 1,
+            hintsUsed: data.hintsUsed || 0
+          })
+          break
+
+        case 'study_session':
+          const sessionDuration = data.duration || 0
+          progressUpdate = {
+            totalStudyHours: (userProgress.totalStudyHours || 0) + (sessionDuration / 60),
+            currentWeekHours: (userProgress.currentWeekHours || 0) + (sessionDuration / 60),
+            lastActivityDate: now,
+            updatedAt: now
+          }
+
+          // Record the study session
+          await addDoc(collection(db, COLLECTIONS.STUDY_SESSIONS), {
+            userId,
+            sessionType: data.sessionType || 'coding-practice',
+            topicId: data.topicId,
+            startTime: data.startTime || now,
+            endTime: now,
+            duration: sessionDuration,
+            problemsAttempted: data.problemsAttempted || 0,
+            problemsSolved: data.problemsSolved || 0
+          })
+          break
+
+        case 'certificate_earned':
+          progressUpdate = {
+            certificatesEarned: (userProgress.certificatesEarned || 0) + 1,
+            updatedAt: now
+          }
+
+          // Record the certificate
+          await addDoc(collection(db, COLLECTIONS.CERTIFICATES), {
+            userId,
+            certificateId: data.certificateId,
+            title: data.title,
+            description: data.description,
+            issuedAt: now,
+            skills: data.skills || [],
+            verificationUrl: data.verificationUrl
+          })
+          break
+
+        case 'achievement_earned':
+          // Record the achievement
+          await addDoc(collection(db, COLLECTIONS.ACHIEVEMENTS), {
+            userId,
+            title: data.title,
+            description: data.description,
+            icon: data.icon,
+            category: data.category,
+            earnedAt: now
+          })
+          break
+
+        default:
+          // General activity update
+          progressUpdate = {
+            lastActivityDate: now,
+            updatedAt: now
+          }
+      }
+
+      // Update user progress document
+      const progressRef = doc(db, COLLECTIONS.USER_PROGRESS, userId)
+      await updateDoc(progressRef, progressUpdate)
+
+      // Update local state
+      setUserProgress(prev => ({
+        ...prev,
+        ...progressUpdate
+      }))
+
+      // Check for achievements
+      await checkAndAwardAchievements(userId, progressUpdate)
+
+    } catch (error) {
+      console.error('Error tracking user activity:', error)
+    }
+  }
+
+  // Check and award achievements based on progress
+  const checkAndAwardAchievements = async (userId, progressUpdate) => {
+    try {
+      const achievements = []
+
+      // Problem solving achievements
+      if (progressUpdate.totalProblemsSolved >= 10 && !userProgress.achievements?.some(a => a.title === 'Problem Solver')) {
+        achievements.push({
+          title: 'Problem Solver',
+          description: 'Solved 10+ coding problems',
+          icon: '🎯',
+          category: 'coding'
+        })
+      }
+
+      if (progressUpdate.totalProblemsSolved >= 50 && !userProgress.achievements?.some(a => a.title === 'Algorithm Expert')) {
+        achievements.push({
+          title: 'Algorithm Expert',
+          description: 'Solved 50+ coding problems',
+          icon: '🧠',
+          category: 'coding'
+        })
+      }
+
+      // Study streak achievements
+      if (progressUpdate.studyStreak >= 7 && !userProgress.achievements?.some(a => a.title === 'Week Warrior')) {
+        achievements.push({
+          title: 'Week Warrior',
+          description: '7-day learning streak',
+          icon: '🔥',
+          category: 'streak'
+        })
+      }
+
+      if (progressUpdate.studyStreak >= 30 && !userProgress.achievements?.some(a => a.title === 'Consistency King')) {
+        achievements.push({
+          title: 'Consistency King',
+          description: '30-day learning streak',
+          icon: '👑',
+          category: 'streak'
+        })
+      }
+
+      // Study hours achievements
+      if (progressUpdate.totalStudyHours >= 10 && !userProgress.achievements?.some(a => a.title === 'Dedicated Learner')) {
+        achievements.push({
+          title: 'Dedicated Learner',
+          description: '10+ hours of study time',
+          icon: '📚',
+          category: 'learning'
+        })
+      }
+
+      // Award achievements
+      for (const achievement of achievements) {
+        await trackUserActivity('achievement_earned', achievement)
+      }
+
+    } catch (error) {
+      console.error('Error checking achievements:', error)
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -415,39 +710,319 @@ const LMSPortal = ({ user }) => {
         </div>
       </div> */}
 
-      {/* My Courses */}
+      {/* Premium Learning Hub */}
       <div>
-        <h2 className="text-xl font-bold text-white mb-4">My Courses</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {courses.map(course => (
-            <div key={course.id} className="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:border-blue-500 transition-colors">
-              <h3 className="text-base font-semibold text-white mb-2">{course.title}</h3>
-              <p className="text-gray-400 text-sm mb-3">by {course.instructor}</p>
-              
-              <div className="mb-3">
-                <div className="flex justify-between text-sm text-gray-400 mb-1">
-                  <span>Progress</span>
-                  <span>{course.solved || 0}/{course.total || 102} Problems solved</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div
-                    className="bg-orange-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${course.total ? ((course.solved || 0) / course.total) * 100 : 0}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="space-y-1 text-sm text-gray-300">
-                <p>📅 Next: {course.nextClass}</p>
-                <p>⏱️ Duration: {course.duration}</p>
-                <p>👥 Students: {course.students.toLocaleString()}</p>
-              </div>
-
-              <button className="w-full mt-3 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                Continue Learning
-              </button>
+        <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+          <span className="text-2xl mr-2">🚀</span>
+          Premium Learning Hub
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Coding Practice */}
+          <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-xl p-5 border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 transform hover:scale-105">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">💻</div>
+              <h3 className="text-lg font-semibold text-white mb-1">Master Coding</h3>
+              <p className="text-gray-300 text-sm">413+ problems, exact interview patterns</p>
             </div>
-          ))}
+            <div className="space-y-2 text-sm text-gray-300 mb-4">
+              <div className="flex justify-between">
+                <span>Problems Solved</span>
+                <span className="text-blue-400 font-medium">{userProgress.totalProblemsSolved || 0}</span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (userProgress.totalProblemsSolved || 0) * 0.24)}%` }}
+                ></div>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/master-coding-sheet')}
+              className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              Start Practicing
+            </button>
+          </div>
+
+          {/* Placement Prep */}
+          <div className="bg-gradient-to-br from-green-600/20 to-teal-600/20 rounded-xl p-5 border border-green-500/30 hover:border-green-400/50 transition-all duration-300 transform hover:scale-105">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">🎯</div>
+              <h3 className="text-lg font-semibold text-white mb-1">Placement Kit</h3>
+              <p className="text-gray-300 text-sm">Complete preparation for top companies</p>
+            </div>
+            <div className="space-y-2 text-sm text-gray-300 mb-4">
+              <div className="flex justify-between">
+                <span>Study Hours</span>
+                <span className="text-green-400 font-medium">{userProgress.totalStudyHours || 0}h</span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (userProgress.totalStudyHours || 0) * 6.67)}%` }}
+                ></div>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveSection('placement')}
+              className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+            >
+              Start Preparation
+            </button>
+          </div>
+
+          {/* Career Services */}
+          <div className="bg-gradient-to-br from-orange-600/20 to-red-600/20 rounded-xl p-5 border border-orange-500/30 hover:border-orange-400/50 transition-all duration-300 transform hover:scale-105">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">💼</div>
+              <h3 className="text-lg font-semibold text-white mb-1">Career Services</h3>
+              <p className="text-gray-300 text-sm">Resume, interviews, job opportunities</p>
+            </div>
+            <div className="space-y-2 text-sm text-gray-300 mb-4">
+              <div className="flex justify-between">
+                <span>Certificates</span>
+                <span className="text-orange-400 font-medium">{userProgress.certificatesEarned || 0}</span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-orange-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (userProgress.certificatesEarned || 0) * 25)}%` }}
+                ></div>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveSection('internships')}
+              className="w-full px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
+            >
+              Explore Careers
+            </button>
+          </div>
+
+          {/* Innovation Hub */}
+          <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-xl p-5 border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 transform hover:scale-105">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">🚀</div>
+              <h3 className="text-lg font-semibold text-white mb-1">Innovation Hub</h3>
+              <p className="text-gray-300 text-sm">Projects, hackathons, emerging tech</p>
+            </div>
+            <div className="space-y-2 text-sm text-gray-300 mb-4">
+              <div className="flex justify-between">
+                <span>Projects Completed</span>
+                <span className="text-purple-400 font-medium">{userProgress.certificatesEarned || 0}</span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (userProgress.certificatesEarned || 0) * 20)}%` }}
+                ></div>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveSection('projects')}
+              className="w-full px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+            >
+              Build Projects
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Upcoming Live Sessions */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+          <span className="text-2xl mr-2">📅</span>
+          Upcoming Live Sessions
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {liveSessions.length > 0 ? liveSessions.map((session, index) => {
+            const sessionIcons = ['🧠', '🏗️', '🚀', '💻', '🤖', '📊']
+            const colors = ['blue', 'green', 'purple', 'orange', 'red', 'teal']
+            const color = colors[index % colors.length]
+            const icon = sessionIcons[index % sessionIcons.length]
+
+            return (
+              <div key={session.id || index} className={`bg-gray-800 rounded-xl p-5 border border-gray-700 hover:border-${color}-500 transition-colors`}>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-white mb-1">{session.title}</h3>
+                  </div>
+                  <span className="text-2xl">{icon}</span>
+                </div>
+                <div className="space-y-2 text-sm text-gray-300 mb-4">
+                  <p className="text-gray-400 italic">Click to join the session</p>
+                </div>
+                <button className={`w-full px-3 py-2 bg-${color}-600 text-white rounded-lg hover:bg-${color}-700 transition-colors text-sm`}>
+                  Join Session
+                </button>
+              </div>
+            )
+          }) : (
+            <>
+              <div className="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:border-blue-500 transition-colors">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-white mb-1">Advanced DSA Techniques</h3>
+                  </div>
+                  <span className="text-2xl">🧠</span>
+                </div>
+                <div className="space-y-2 text-sm text-gray-300 mb-4">
+                  <p className="text-gray-400 italic">Click to join the session</p>
+                </div>
+                <button className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                  Join Session
+                </button>
+              </div>
+
+              <div className="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:border-green-500 transition-colors">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-white mb-1">System Design Interview Prep</h3>
+                  </div>
+                  <span className="text-2xl">🏗️</span>
+                </div>
+                <div className="space-y-2 text-sm text-gray-300 mb-4">
+                  <p className="text-gray-400 italic">Click to join the session</p>
+                </div>
+                <button className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                  Join Session
+                </button>
+              </div>
+
+              <div className="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:border-purple-500 transition-colors">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-white mb-1">AI/ML Career Guidance</h3>
+                  </div>
+                  <span className="text-2xl">🚀</span>
+                </div>
+                <div className="space-y-2 text-sm text-gray-300 mb-4">
+                  <p className="text-gray-400 italic">Click to join the session</p>
+                </div>
+                <button className="w-full px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
+                  Join Session
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Personalized Recommendations */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+          <span className="text-2xl mr-2">🎯</span>
+          Recommended for You
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-xl p-6 border border-blue-500/30">
+            <h3 className="text-lg font-semibold text-white mb-3">Next Learning Path</h3>
+            <p className="text-gray-300 text-sm mb-4">
+              {userProgress.totalProblemsSolved > 50
+                ? "Great progress! Focus on advanced topics and system design."
+                : userProgress.totalProblemsSolved > 20
+                ? "You're doing well! Continue with intermediate algorithms."
+                : "Start with fundamental data structures and basic algorithms."
+              }
+            </p>
+            <div className="space-y-2">
+              {userProgress.totalProblemsSolved < 20 ? (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-blue-400">→</span>
+                    <span className="text-gray-300 text-sm">Next: Arrays & Strings</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-400">○</span>
+                    <span className="text-gray-300 text-sm">Future: Linked Lists</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-400">○</span>
+                    <span className="text-gray-300 text-sm">Future: Trees & Graphs</span>
+                  </div>
+                </>
+              ) : userProgress.totalProblemsSolved < 50 ? (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-green-400">✓</span>
+                    <span className="text-gray-300 text-sm">Complete Basic Algorithms</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-blue-400">→</span>
+                    <span className="text-gray-300 text-sm">Next: Dynamic Programming</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-400">○</span>
+                    <span className="text-gray-300 text-sm">Future: Advanced Topics</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-green-400">✓</span>
+                    <span className="text-gray-300 text-sm">Complete Graph Algorithms</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-blue-400">→</span>
+                    <span className="text-gray-300 text-sm">Next: System Design</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-400">○</span>
+                    <span className="text-gray-300 text-sm">Future: Advanced System Design</span>
+                  </div>
+                </>
+              )}
+            </div>
+            <button
+              onClick={() => setActiveSection('placement')}
+              className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Continue Learning Path
+            </button>
+          </div>
+
+          <div className="bg-gradient-to-r from-orange-600/20 to-red-600/20 rounded-xl p-6 border border-orange-500/30">
+            <h3 className="text-lg font-semibold text-white mb-3">Interview Preparation</h3>
+            <p className="text-gray-300 text-sm mb-4">
+              {userProgress.totalProblemsSolved > 100
+                ? "Excellent! You're well-prepared for technical interviews."
+                : userProgress.totalProblemsSolved > 50
+                ? "Good progress! Keep practicing for better results."
+                : "Build your foundation with more practice problems."
+              }
+            </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 text-sm">Technical Questions</span>
+                <span className={`text-sm ${userProgress.totalProblemsSolved > 100 ? 'text-green-400' : userProgress.totalProblemsSolved > 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+                  {Math.min(100, Math.round((userProgress.totalProblemsSolved || 0) * 2))}% ready
+                </span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, Math.round((userProgress.totalProblemsSolved || 0) * 2))}%` }}
+                ></div>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-gray-300 text-sm">System Design</span>
+                <span className={`text-sm ${userProgress.certificatesEarned > 2 ? 'text-green-400' : userProgress.certificatesEarned > 0 ? 'text-yellow-400' : 'text-red-400'}`}>
+                  {Math.min(100, Math.round((userProgress.certificatesEarned || 0) * 25))}% ready
+                </span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-yellow-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, Math.round((userProgress.certificatesEarned || 0) * 25))}%` }}
+                ></div>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveSection('interviews')}
+              className="w-full mt-4 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+            >
+              Practice Interviews
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -466,7 +1041,7 @@ const LMSPortal = ({ user }) => {
     {
       id: 0,
       title: 'Aptitude Round Cheat Sheet',
-      instructor: 'Complete aptitude practice problems',
+      instructor: '',
       progress: 0,
       nextClass: 'Flexible Schedule',
       duration: 'Self-paced',
@@ -489,8 +1064,8 @@ const LMSPortal = ({ user }) => {
     {
       id: 1,
       title: 'Data Structures & Algorithms',
-      instructor: 'Dr. Rajesh Kumar',
-      progress: 60,
+      instructor: '',
+      progress: 0,
       nextClass: 'Tomorrow, 10:00 AM',
       duration: '3 months',
       students: 2156,
@@ -499,8 +1074,8 @@ const LMSPortal = ({ user }) => {
     {
       id: 2,
       title: 'Full Stack Development',
-      instructor: 'Sarah Johnson',
-      progress: 45,
+      instructor: '',
+      progress: 0,
       nextClass: 'Friday, 2:00 PM',
       duration: '4 months',
       students: 1834,
@@ -509,8 +1084,8 @@ const LMSPortal = ({ user }) => {
     {
       id: 3,
       title: 'Programming Fundamentals',
-      instructor: 'Mike Chen',
-      progress: 80,
+      instructor: '',
+      progress: 0,
       nextClass: 'Today, 4:00 PM',
       duration: '2 months',
       students: 3241,
@@ -519,8 +1094,8 @@ const LMSPortal = ({ user }) => {
     {
       id: 4,
       title: 'Artificial Intelligence',
-      instructor: 'Dr. Priya Sharma',
-      progress: 30,
+      instructor: '',
+      progress: 0,
       nextClass: 'Monday, 11:00 AM',
       duration: '5 months',
       students: 1456,
@@ -529,8 +1104,8 @@ const LMSPortal = ({ user }) => {
     {
       id: 5,
       title: 'Machine Learning',
-      instructor: 'Dr. Alex Thompson',
-      progress: 25,
+      instructor: '',
+      progress: 0,
       nextClass: 'Wednesday, 1:00 PM',
       duration: '4 months',
       students: 1234,
@@ -539,8 +1114,8 @@ const LMSPortal = ({ user }) => {
     {
       id: 6,
       title: 'Data Science',
-      instructor: 'Dr. Emily Davis',
-      progress: 50,
+      instructor: '',
+      progress: 0,
       nextClass: 'Thursday, 3:00 PM',
       duration: '4 months',
       students: 1876,
@@ -565,7 +1140,6 @@ const LMSPortal = ({ user }) => {
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
                 <h3 className="text-base font-semibold text-white mb-1">{course.title}</h3>
-                <p className="text-gray-400 text-sm">by {course.instructor}</p>
               </div>
               <div className="text-2xl ml-2">{course.icon}</div>
             </div>
@@ -584,9 +1158,7 @@ const LMSPortal = ({ user }) => {
             </div>
 
             <div className="space-y-1 text-sm text-gray-300 mb-4">
-              <p>📅 Next: {course.nextClass}</p>
               <p>⏱️ Duration: {course.duration}</p>
-              <p>👥 Students: {course.students.toLocaleString()}</p>
             </div>
 
             <button
@@ -2175,7 +2747,34 @@ const LMSPortal = ({ user }) => {
 
     return (
       <div>
-        <h2 className="text-xl font-bold text-white mb-6">Alumni Support</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-white">Alumni Support</h2>
+          {/* Search Bar */}
+          <div className="relative w-80">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search alumni..."
+              value={alumniSearchTerm}
+              onChange={(e) => setAlumniSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
+            />
+            {alumniSearchTerm && (
+              <button
+                onClick={() => setAlumniSearchTerm('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
         <div className="mb-6">
           <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-4">
             <h3 className="text-white font-semibold mb-2">🤝 Connect with Successful Alumni</h3>
@@ -2225,23 +2824,35 @@ const LMSPortal = ({ user }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {alumniData[batchYear]?.[alumniActiveTabs[batchYear] || 'AI & ML']?.map(alumni => (
-                      <tr key={alumni.id} className="border-b border-gray-700 hover:bg-gray-700/50">
-                        <td className="py-3 px-2 text-gray-300">{alumni.id}</td>
-                        <td className="py-3 px-2 text-white font-medium">{alumni.name}</td>
-                        <td className="py-3 px-2 text-gray-300">{batchYear}</td>
-                        <td className="py-3 px-2 text-blue-400">{alumniActiveTabs[batchYear] || 'AI & ML'}</td>
-                        <td className="py-3 px-2 text-blue-400"><a href={`mailto:${alumni.email}`} className="hover:text-blue-300">{alumni.email}</a></td>
-                        <td className="py-3 px-2 text-green-400">{alumni.company}</td>
-                        <td className="py-3 px-2 text-blue-400"><a href={alumni.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300">View Profile</a></td>
-                      </tr>
-                    )) || (
-                      <tr>
-                        <td colSpan="7" className="py-4 px-2 text-center text-gray-500">
-                          No alumni data available for this specialization
-                        </td>
-                      </tr>
-                    )}
+                    {(() => {
+                      const currentAlumni = alumniData[batchYear]?.[alumniActiveTabs[batchYear] || 'AI & ML'] || [];
+                      const filteredAlumni = currentAlumni.filter(alumni =>
+                        alumniSearchTerm === '' ||
+                        alumni.name?.toLowerCase().includes(alumniSearchTerm.toLowerCase()) ||
+                        alumni.company?.toLowerCase().includes(alumniSearchTerm.toLowerCase()) ||
+                        alumni.email?.toLowerCase().includes(alumniSearchTerm.toLowerCase()) ||
+                        batchYear.toString().includes(alumniSearchTerm) ||
+                        (alumniActiveTabs[batchYear] || 'AI & ML').toLowerCase().includes(alumniSearchTerm.toLowerCase())
+                      );
+
+                      return filteredAlumni.length > 0 ? filteredAlumni.map(alumni => (
+                        <tr key={alumni.id} className="border-b border-gray-700 hover:bg-gray-700/50">
+                          <td className="py-3 px-2 text-gray-300">{alumni.id}</td>
+                          <td className="py-3 px-2 text-white font-medium">{alumni.name}</td>
+                          <td className="py-3 px-2 text-gray-300">{batchYear}</td>
+                          <td className="py-3 px-2 text-blue-400">{alumniActiveTabs[batchYear] || 'AI & ML'}</td>
+                          <td className="py-3 px-2 text-blue-400"><a href={`mailto:${alumni.email}`} className="hover:text-blue-300">{alumni.email}</a></td>
+                          <td className="py-3 px-2 text-green-400">{alumni.company}</td>
+                          <td className="py-3 px-2 text-blue-400"><a href={alumni.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-blue-300">View Profile</a></td>
+                        </tr>
+                      )) : (
+                        <tr>
+                          <td colSpan="7" className="py-4 px-2 text-center text-gray-500">
+                            {alumniSearchTerm ? 'No alumni found matching your search' : 'No alumni data available for this specialization'}
+                          </td>
+                        </tr>
+                      );
+                    })()}
                   </tbody>
                 </table>
               </div>
@@ -2445,8 +3056,17 @@ const LMSPortal = ({ user }) => {
     }
   }
 
+  // Provide progress context to child components
+  const progressContextValue = {
+    userProgress,
+    trackUserActivity,
+    fetchUserProgress,
+    recentAchievements
+  }
+
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <ProgressContext.Provider value={progressContextValue}>
+      <div className="min-h-screen bg-gray-900 flex flex-col">
       {/* Header - Fixed at top, not scrollable */}
       <header className="bg-gray-800 border-b border-gray-700 sticky top-0 z-30 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4">
@@ -2535,9 +3155,10 @@ const LMSPortal = ({ user }) => {
           {renderContent()}
         </div>
       </div>
+    </div>
 
-      {/* DSA Options Modal */}
-      {showDSAOptions && (
+    {/* DSA Options Modal */}
+    {showDSAOptions && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-gray-800 border border-gray-600 rounded-2xl p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
@@ -2625,7 +3246,7 @@ const LMSPortal = ({ user }) => {
           </div>
         </div>
       )}
-    </div>
+    </ProgressContext.Provider>
   )
 }
 

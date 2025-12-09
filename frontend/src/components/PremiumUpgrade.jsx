@@ -22,7 +22,7 @@ export default function PremiumUpgrade({ user, onClose }) {
       period: 'month',
       features: [
         'Placement Preparation Kit',
-        'Internships and Job Openings',
+        'Internships & Job Opening Platforms',
         'ATS Resume Building',
         'Project Ideas (Industry Level)',
         'Alumni Support',

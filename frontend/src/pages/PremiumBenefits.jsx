@@ -25,7 +25,7 @@ export default function PremiumBenefits({ user }) {
     },
     {
       id: 2,
-      title: "Internships and Job Openings",
+      title: "Internships & Job Opening Platforms",
       description: "Exclusive access to verified internships and job opportunities from top companies",
       icon: "💼",
       color: "from-green-500 to-emerald-500",

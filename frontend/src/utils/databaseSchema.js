@@ -27,6 +27,14 @@ export const COLLECTIONS = {
   NOTIFICATIONS: 'notifications',
   MESSAGES: 'messages',
 
+  // User Progress & Analytics
+  USER_PROGRESS: 'userProgress',
+  PROBLEM_SOLVES: 'problemSolves',
+  STUDY_SESSIONS: 'studySessions',
+  ACHIEVEMENTS: 'achievements',
+  CERTIFICATES: 'certificates',
+  LIVE_SESSIONS: 'liveSessions',
+
   // Analytics & System
   ANALYTICS: 'analytics',
   SYSTEM_LOGS: 'systemLogs',
@@ -250,6 +258,86 @@ export const ANALYTICS_SCHEMA = {
   createdAt: 'timestamp'
 };
 
+// User Progress Schema
+export const USER_PROGRESS_SCHEMA = {
+  userId: 'string',
+  totalProblemsSolved: 'number',
+  studyStreak: 'number',
+  totalStudyHours: 'number',
+  certificatesEarned: 'number',
+  lastActivityDate: 'timestamp',
+  currentWeekHours: 'number',
+  achievements: 'array', // [{ id, title, description, earnedAt }]
+  skillLevels: 'object', // { 'data-structures': 'beginner', 'algorithms': 'intermediate' }
+  completedTopics: 'array', // ['arrays', 'linked-lists', 'trees']
+  createdAt: 'timestamp',
+  updatedAt: 'timestamp'
+};
+
+// Problem Solves Schema
+export const PROBLEM_SOLVES_SCHEMA = {
+  userId: 'string',
+  problemId: 'string',
+  topicId: 'string',
+  difficulty: 'string', // 'easy', 'medium', 'hard'
+  solvedAt: 'timestamp',
+  timeSpent: 'number', // in minutes
+  attempts: 'number',
+  hintsUsed: 'number'
+};
+
+// Study Sessions Schema
+export const STUDY_SESSIONS_SCHEMA = {
+  userId: 'string',
+  sessionType: 'string', // 'coding-practice', 'video-learning', 'live-session'
+  topicId: 'string',
+  startTime: 'timestamp',
+  endTime: 'timestamp',
+  duration: 'number', // in minutes
+  problemsAttempted: 'number',
+  problemsSolved: 'number'
+};
+
+// Achievements Schema
+export const ACHIEVEMENTS_SCHEMA = {
+  id: 'string',
+  title: 'string',
+  description: 'string',
+  icon: 'string',
+  category: 'string', // 'coding', 'learning', 'streak', 'completion'
+  requirements: 'object', // { type: 'problems_solved', value: 100 }
+  rarity: 'string', // 'common', 'rare', 'epic', 'legendary'
+  createdAt: 'timestamp'
+};
+
+// Certificates Schema
+export const CERTIFICATES_SCHEMA = {
+  userId: 'string',
+  certificateId: 'string',
+  title: 'string',
+  description: 'string',
+  issuedAt: 'timestamp',
+  expiryDate: 'timestamp',
+  skills: 'array',
+  verificationUrl: 'string'
+};
+
+// Live Sessions Schema
+export const LIVE_SESSIONS_SCHEMA = {
+  id: 'string',
+  title: 'string',
+  instructor: 'string',
+  description: 'string',
+  scheduledAt: 'timestamp',
+  duration: 'number', // in minutes
+  maxParticipants: 'number',
+  enrolledCount: 'number',
+  status: 'string', // 'upcoming', 'live', 'completed', 'cancelled'
+  meetingLink: 'string',
+  recordingUrl: 'string',
+  tags: 'array'
+};
+
 // System Logs Schema
 export const SYSTEM_LOG_SCHEMA = {
   id: 'string',
@@ -433,6 +521,12 @@ export default {
   ASSIGNMENT_SCHEMA,
   COURSE_SCHEMA,
   NOTIFICATION_SCHEMA,
+  USER_PROGRESS_SCHEMA,
+  PROBLEM_SOLVES_SCHEMA,
+  STUDY_SESSIONS_SCHEMA,
+  ACHIEVEMENTS_SCHEMA,
+  CERTIFICATES_SCHEMA,
+  LIVE_SESSIONS_SCHEMA,
   ANALYTICS_SCHEMA,
   SYSTEM_LOG_SCHEMA,
   DATABASE_INDEXES,
