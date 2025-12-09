@@ -622,7 +622,7 @@ export default function Home({user}){
                 </div>
                 <div className="max-w-4xl mx-auto text-center mb-8">
                   <p className="text-white/90 text-xl leading-relaxed mb-6">
-                    LTSU Student Portal is your comprehensive digital companion for academic excellence. Created by dedicated 3rd-year students <strong className="text-blue-400">Vairagade Pavan Kalyan (AI & ML)</strong> and <strong className="text-purple-400">Satish (Data Science)</strong>, this platform empowers students with seamless access to resources, fosters collaborative learning, and builds a vibrant educational community.
+                    LTSU Student Portal is your comprehensive digital companion for academic excellence. Created by dedicated 3rd-year student <strong className="text-blue-400">Vairagade Pavan Kalyan (AI & ML)</strong>, this platform empowers students with seamless access to resources, fosters collaborative learning, and builds a vibrant educational community.
                   </p>
                   <div className="p-6 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
                     <p className="text-white/90 text-lg italic font-medium">

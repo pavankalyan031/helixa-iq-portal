@@ -20,7 +20,7 @@
     "firebase",
     "express"
   ],
-  "author": "LTSU Development Team",
+  "author": "Vairagade Pavan Kalyan",
   "license": "MIT",
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",

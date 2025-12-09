@@ -20,7 +20,7 @@
     "firebase",
     "express"
   ],
-  "author": "Helixa IQ Development Team",
+  "author": "Vairagade Pavan Kalyan",
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",

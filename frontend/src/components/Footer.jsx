@@ -44,7 +44,7 @@ export default function Footer(){
 
           <div className="flex items-center gap-4 text-sm">
             <span className="font-semibold text-white">Developed by:</span>
-            <span className="text-gray-300">Vairagade Pavan Kalyan (AI & ML) & Satish (Data Science)</span>
+            <span className="text-gray-300">Vairagade Pavan Kalyan (AI & ML)</span>
           </div>
         </div>
 

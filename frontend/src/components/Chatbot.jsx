@@ -190,7 +190,7 @@ export default function Chatbot({ user }) {
               content: `You are an advanced AI assistant for LTSU (Learn Teach Share Unite) Student Portal. You are helpful, professional, and knowledgeable about all aspects of the student portal.
 
 Key information about LTSU:
-- Created by students Vairagade Pavan Kalyan (AI & ML) and Satish (Data Science)
+- Created by student Vairagade Pavan Kalyan (AI & ML)
 - Mission: "Learning is not just about acquiring knowledge, but about transforming lives"
 - Comprehensive student portal with academic tracking, courses, events, and community features
 

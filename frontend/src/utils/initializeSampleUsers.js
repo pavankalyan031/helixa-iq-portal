@@ -6,36 +6,6 @@ export const initializeSampleUsers = async () => {
   try {
     const sampleUsers = [
       {
-        uid: 'sample-user-1',
-        firstName: 'Satish',
-        lastName: '',
-        fullName: 'Satish',
-        phoneNumber: '9876543210',
-        email: 'satish123@gmail.com',
-        studentId: '23100010011',
-        gender: 'Male',
-        department: 'BTech CSE IBM',
-        specialization: 'AI & ML',
-        currentYear: '3',
-        currentSemester: '1',
-        enrollmentYear: '2021',
-        status: 'active',
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-01-15'),
-        address: {
-          street: '123 Main Street',
-          city: 'Hyderabad',
-          state: 'Telangana',
-          pincode: '500001',
-          country: 'India'
-        },
-        academicRecords: {
-          gpa: 8.5,
-          totalCredits: 120,
-          completedSubjects: ['CS101', 'CS102', 'CS201']
-        }
-      },
-      {
         uid: 'sample-user-2',
         firstName: 'Priya',
         lastName: 'Sharma',
